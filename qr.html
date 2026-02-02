@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR-код для очереди</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f3f4f6;
+            padding: 20px;
+        }
+
+        .qr-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        #qr-code {
+            margin: 20px auto;
+        }
+
+        #qr-code canvas {
+            border-radius: 12px;
+        }
+
+        .instructions {
+            background: #eff6ff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .instructions h2 {
+            font-size: 16px;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            text-align: left;
+            color: #1e3a5f;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .print-btn {
+            margin-top: 30px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .print-btn:hover {
+            background: #1d4ed8;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .qr-card {
+                box-shadow: none;
+                border: 2px solid #e5e7eb;
+            }
+
+            .print-btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="qr-card">
+        <h1>Электронная очередь</h1>
+        <p class="subtitle">Отсканируйте QR-код, чтобы занять очередь</p>
+
+        <div id="qr-code"></div>
+
+        <div class="instructions">
+            <h2>Как получить талон:</h2>
+            <ol>
+                <li>Отсканируйте QR-код камерой телефона</li>
+                <li>Нажмите "Получить талон"</li>
+                <li>Запомните ваш номер</li>
+                <li>Ожидайте вызова на экране</li>
+            </ol>
+        </div>
+
+        <button class="print-btn" onclick="window.print()">Распечатать</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+        const customerUrl = window.location.href.replace('qr.html', 'index.html');
+
+        QRCode.toCanvas(document.createElement('canvas'), customerUrl, {
+            width: 250,
+            margin: 2,
+            color: {
+                dark: '#1f2937',
+                light: '#ffffff'
+            }
+        }, (error, canvas) => {
+            if (error) {
+                console.error(error);
+                return;
+            }
+            document.getElementById('qr-code').appendChild(canvas);
+        });
+    </script>
+</body>
+</html>
