@@ -19,7 +19,13 @@ function getTodayString() {
     return today.toISOString().split('T')[0]; // Returns "YYYY-MM-DD"
 }
 
-// Generate a random 4-digit starting number
-function generateStartNumber() {
-    return Math.floor(1000 + Math.random() * 9000); // 1000-9999
+// Generate a random ticket number (Letter + 3 digits, e.g., "A123", "K456")
+function generateTicketNumber() {
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // Removed I and O to avoid confusion
+    const letter = letters[Math.floor(Math.random() * letters.length)];
+    const digits = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return letter + digits;
 }
+
+// Ticket expiration time in milliseconds (2 hours)
+const TICKET_EXPIRATION_MS = 2 * 60 * 60 * 1000;

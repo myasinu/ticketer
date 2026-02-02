@@ -18,17 +18,13 @@ const queueCountEl = document.getElementById('queue-count');
 const queueListEl = document.getElementById('queue-list');
 const nextBtn = document.getElementById('next-btn');
 const resetBtn = document.getElementById('reset-btn');
-const qrBtn = document.getElementById('qr-btn');
+const resetHint = document.getElementById('reset-hint');
 const changePinBtn = document.getElementById('change-pin-btn');
 
 // DOM Elements - Modals
 const resetModal = document.getElementById('reset-modal');
 const resetCancel = document.getElementById('reset-cancel');
 const resetConfirm = document.getElementById('reset-confirm');
-const qrModal = document.getElementById('qr-modal');
-const qrClose = document.getElementById('qr-close');
-const qrCodeEl = document.getElementById('qr-code');
-const qrUrlEl = document.getElementById('qr-url');
 const pinModal = document.getElementById('pin-modal');
 const newPinInput = document.getElementById('new-pin-input');
 const confirmPinInput = document.getElementById('confirm-pin-input');
@@ -180,14 +176,23 @@ async function initializeQueue() {
 
     if (!meta || meta.date !== today) {
         // New day - initialize
-        const startNumber = generateStartNumber();
         await metaRef.set({
             date: today,
-            startNumber: startNumber,
-            nextNumber: startNumber,
             currentServing: null
         });
         await database.ref('queue').remove();
+        await database.ref('usedNumbers').remove();
+    }
+}
+
+// Update reset button state based on queue
+function updateResetButtonState() {
+    if (queue.length === 0) {
+        resetBtn.disabled = false;
+        resetHint.classList.add('hidden');
+    } else {
+        resetBtn.disabled = true;
+        resetHint.classList.remove('hidden');
     }
 }
 
@@ -233,41 +238,26 @@ async function callNext() {
     await database.ref(`queue/${nextCustomer.key}`).remove();
 }
 
-// Reset queue with new random number
+// Reset queue
 async function resetQueue() {
+    // Double-check queue is empty
+    if (queue.length > 0) {
+        alert('Невозможно сбросить очередь пока есть ожидающие!');
+        resetModal.classList.add('hidden');
+        return;
+    }
+
     const today = getTodayString();
-    const startNumber = generateStartNumber();
 
     await database.ref('meta').set({
         date: today,
-        startNumber: startNumber,
-        nextNumber: startNumber,
         currentServing: null
     });
 
     await database.ref('queue').remove();
+    await database.ref('usedNumbers').remove();
 
     resetModal.classList.add('hidden');
-}
-
-// Generate QR code
-function generateQRCode() {
-    const url = window.location.href.replace('cashier.html', 'index.html');
-    qrUrlEl.textContent = url;
-    qrCodeEl.innerHTML = '';
-
-    QRCode.toCanvas(document.createElement('canvas'), url, {
-        width: 250,
-        margin: 2
-    }, (error, canvas) => {
-        if (error) {
-            console.error(error);
-            return;
-        }
-        qrCodeEl.appendChild(canvas);
-    });
-
-    qrModal.classList.remove('hidden');
 }
 
 // Setup Firebase listeners
@@ -281,6 +271,7 @@ function setupListeners() {
 
         queueCountEl.textContent = queue.length;
         renderQueueList();
+        updateResetButtonState();
     });
 
     // Listen for current serving
@@ -309,7 +300,9 @@ logoutBtn.addEventListener('click', handleLogout);
 nextBtn.addEventListener('click', callNext);
 
 resetBtn.addEventListener('click', () => {
-    resetModal.classList.remove('hidden');
+    if (queue.length === 0) {
+        resetModal.classList.remove('hidden');
+    }
 });
 
 resetCancel.addEventListener('click', () => {
@@ -317,12 +310,6 @@ resetCancel.addEventListener('click', () => {
 });
 
 resetConfirm.addEventListener('click', resetQueue);
-
-qrBtn.addEventListener('click', generateQRCode);
-
-qrClose.addEventListener('click', () => {
-    qrModal.classList.add('hidden');
-});
 
 changePinBtn.addEventListener('click', () => {
     pinModal.classList.remove('hidden');
@@ -341,12 +328,6 @@ pinSave.addEventListener('click', changePin);
 resetModal.addEventListener('click', (e) => {
     if (e.target === resetModal) {
         resetModal.classList.add('hidden');
-    }
-});
-
-qrModal.addEventListener('click', (e) => {
-    if (e.target === qrModal) {
-        qrModal.classList.add('hidden');
     }
 });
 

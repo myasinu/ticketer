@@ -232,6 +232,17 @@ body {
     font-size: 14px;
 }
 
+.hint-message {
+    color: var(--gray-600);
+    font-size: 12px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.hint-message.hidden {
+    display: none;
+}
+
 .dashboard-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
