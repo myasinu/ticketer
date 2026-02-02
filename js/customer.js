@@ -4,6 +4,7 @@ const TICKET_STORAGE_KEY = 'ticketer_customer_ticket';
 let currentTicket = null;
 let currentQueue = [];
 let currentServing = null;
+let firebaseLoaded = false;
 
 // DOM Elements
 const noTicketDiv = document.getElementById('no-ticket');
@@ -18,12 +19,16 @@ const getTicketBtn = document.getElementById('get-ticket-btn');
 function loadStoredTicket() {
     const stored = localStorage.getItem(TICKET_STORAGE_KEY);
     if (stored) {
-        const data = JSON.parse(stored);
-        // Check if ticket is from today
-        if (data.date === getTodayString()) {
-            return data;
-        } else {
-            // Clear old ticket
+        try {
+            const data = JSON.parse(stored);
+            // Check if ticket is from today
+            if (data.date === getTodayString()) {
+                return data;
+            } else {
+                // Clear old ticket
+                localStorage.removeItem(TICKET_STORAGE_KEY);
+            }
+        } catch (e) {
             localStorage.removeItem(TICKET_STORAGE_KEY);
         }
     }
@@ -51,12 +56,12 @@ function showGetTicket() {
 
 // Update position in queue - called whenever queue or currentServing changes
 function updatePosition() {
+    // Update "Now Serving" display regardless of ticket status
+    nowServingEl.textContent = currentServing || '---';
+
     if (!currentTicket) return;
 
     const ticketNumber = currentTicket.number;
-
-    // Update "Now Serving" display
-    nowServingEl.textContent = currentServing || '---';
 
     // Check if being served
     if (currentServing === ticketNumber) {
@@ -71,8 +76,12 @@ function updatePosition() {
     const queuePosition = currentQueue.findIndex(item => item.number === ticketNumber);
 
     if (queuePosition === -1) {
-        // Not in queue - either served already or removed
-        positionEl.textContent = "Готово";
+        // Only mark as done if Firebase has loaded and ticket is truly not in queue
+        if (firebaseLoaded) {
+            positionEl.textContent = "Готово";
+        } else {
+            positionEl.textContent = "...";
+        }
         return;
     }
 
@@ -130,6 +139,7 @@ async function getNewTicket() {
         };
         saveTicket(currentTicket);
         showTicket(newNumber);
+        updatePosition();
 
     } catch (error) {
         console.error('Error getting ticket:', error);
@@ -152,7 +162,16 @@ function setupListeners() {
     database.ref('queue').on('value', (snapshot) => {
         const queueData = snapshot.val() || {};
         currentQueue = Object.values(queueData).sort((a, b) => a.timestamp - b.timestamp);
+        firebaseLoaded = true;
         updatePosition();
+
+        // Check if we have a stored ticket and should show it
+        if (currentTicket && !hasTicketDiv.classList.contains('hidden') === false) {
+            const inQueue = currentQueue.some(item => item.number === currentTicket.number);
+            if (inQueue || currentServing === currentTicket.number) {
+                showTicket(currentTicket.number);
+            }
+        }
     });
 
     // Listen for date changes (daily reset)
@@ -168,33 +187,20 @@ function setupListeners() {
 }
 
 // Initialize
-async function init() {
-    // Setup Firebase listeners first (so we get real-time updates)
-    setupListeners();
-
-    // Check for existing ticket
+function init() {
+    // Load stored ticket first
     currentTicket = loadStoredTicket();
 
+    // If we have a stored ticket, show it immediately (position will update when Firebase loads)
     if (currentTicket) {
-        // Wait a moment for Firebase listeners to populate data
-        setTimeout(() => {
-            // Check if ticket still exists in queue or is being served
-            const inQueue = currentQueue.some(item => item.number === currentTicket.number);
-            const isBeingServed = currentServing === currentTicket.number;
-
-            if (inQueue || isBeingServed) {
-                showTicket(currentTicket.number);
-                updatePosition();
-            } else {
-                // Ticket was already served
-                localStorage.removeItem(TICKET_STORAGE_KEY);
-                currentTicket = null;
-                showGetTicket();
-            }
-        }, 500);
+        showTicket(currentTicket.number);
+        positionEl.textContent = "..."; // Loading indicator
     } else {
         showGetTicket();
     }
+
+    // Setup Firebase listeners (will update position when data arrives)
+    setupListeners();
 
     // Setup button event listener
     getTicketBtn.addEventListener('click', getNewTicket);

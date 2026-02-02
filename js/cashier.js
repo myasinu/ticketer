@@ -38,6 +38,18 @@ const pinSave = document.getElementById('pin-save');
 
 let queue = [];
 
+// ============ PIN Hashing ============
+
+// Hash a PIN using SHA-256
+async function hashPin(pin) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(pin + 'ticketer_salt_2024');
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+}
+
 // ============ Authentication ============
 
 // Check if user is logged in (session-based)
@@ -61,18 +73,20 @@ function showLogin() {
     loginError.classList.add('hidden');
 }
 
-// Verify PIN against Firebase
+// Verify PIN against Firebase (compares hashes)
 async function verifyPin(enteredPin) {
-    const snapshot = await database.ref('settings/pin').once('value');
-    let storedPin = snapshot.val();
+    const enteredHash = await hashPin(enteredPin);
+    const snapshot = await database.ref('settings/pinHash').once('value');
+    let storedHash = snapshot.val();
 
-    // If no PIN set yet, use default and save it
-    if (!storedPin) {
-        await database.ref('settings/pin').set(DEFAULT_PIN);
-        storedPin = DEFAULT_PIN;
+    // If no PIN hash set yet, set the default PIN hash
+    if (!storedHash) {
+        const defaultHash = await hashPin(DEFAULT_PIN);
+        await database.ref('settings/pinHash').set(defaultHash);
+        storedHash = defaultHash;
     }
 
-    return enteredPin === storedPin;
+    return enteredHash === storedHash;
 }
 
 // Handle login
@@ -140,7 +154,8 @@ async function changePin() {
     }
 
     try {
-        await database.ref('settings/pin').set(newPin);
+        const newHash = await hashPin(newPin);
+        await database.ref('settings/pinHash').set(newHash);
         pinModal.classList.add('hidden');
         newPinInput.value = '';
         confirmPinInput.value = '';
