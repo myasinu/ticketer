@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR-код для очереди</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -45,9 +46,13 @@
 
         #qr-code {
             margin: 20px auto;
+            min-height: 250px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        #qr-code canvas {
+        #qr-code canvas, #qr-code img {
             border-radius: 12px;
         }
 
@@ -112,7 +117,9 @@
         <h1>Электронная очередь</h1>
         <p class="subtitle">Отсканируйте QR-код, чтобы занять очередь</p>
 
-        <div id="qr-code"></div>
+        <div id="qr-code">
+            <span id="loading">Загрузка QR-кода...</span>
+        </div>
 
         <div class="instructions">
             <h2>Как получить талон:</h2>
@@ -127,23 +134,45 @@
         <button class="print-btn" onclick="window.print()">Распечатать</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <script>
-        const customerUrl = window.location.href.replace('qr.html', 'index.html');
+        document.addEventListener('DOMContentLoaded', function() {
+            const qrContainer = document.getElementById('qr-code');
+            const loading = document.getElementById('loading');
 
-        QRCode.toCanvas(document.createElement('canvas'), customerUrl, {
-            width: 250,
-            margin: 2,
-            color: {
-                dark: '#1f2937',
-                light: '#ffffff'
-            }
-        }, (error, canvas) => {
-            if (error) {
-                console.error(error);
+            // Get the customer URL
+            const currentUrl = window.location.href;
+            const customerUrl = currentUrl.replace('qr.html', 'index.html');
+
+            // Check if QRCode library loaded
+            if (typeof QRCode === 'undefined') {
+                loading.textContent = 'Ошибка загрузки. Используйте ссылку: ' + customerUrl;
                 return;
             }
-            document.getElementById('qr-code').appendChild(canvas);
+
+            // Generate QR code as image (more reliable)
+            QRCode.toDataURL(customerUrl, {
+                width: 250,
+                margin: 2,
+                color: {
+                    dark: '#1f2937',
+                    light: '#ffffff'
+                }
+            }, function(error, url) {
+                if (error) {
+                    console.error(error);
+                    loading.textContent = 'Ошибка генерации QR-кода';
+                    return;
+                }
+
+                loading.style.display = 'none';
+
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = 'QR Code';
+                img.width = 250;
+                img.height = 250;
+                qrContainer.appendChild(img);
+            });
         });
     </script>
 </body>
