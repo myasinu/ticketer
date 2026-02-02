@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель кассира</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="cashier-page">
+    <!-- PIN Login Screen -->
+    <div id="login-screen" class="container login-container">
+        <div class="card login-card">
+            <h1>Вход для кассира</h1>
+            <p>Введите PIN-код для доступа</p>
+            <input type="password" id="pin-input" class="pin-input" maxlength="6" placeholder="Введите 6-значный PIN" inputmode="numeric" pattern="[0-9]*">
+            <button id="login-btn" class="btn btn-primary btn-large">Войти</button>
+            <p id="login-error" class="error-message hidden">Неверный PIN-код</p>
+        </div>
+    </div>
+
+    <!-- Main Dashboard (hidden until login) -->
+    <div id="dashboard" class="container hidden">
+        <div class="dashboard-header">
+            <h1>Панель кассира</h1>
+            <button id="logout-btn" class="btn btn-secondary btn-small">Выйти</button>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card stats-card">
+                <h2>Сейчас обслуживается</h2>
+                <div id="current-number" class="big-number">---</div>
+                <button id="next-btn" class="btn btn-primary">Вызвать следующего</button>
+            </div>
+
+            <div class="card stats-card">
+                <h2>В очереди</h2>
+                <div id="queue-count" class="big-number">0</div>
+                <span class="label">человек ожидает</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Список очереди</h2>
+            <div id="queue-list" class="queue-list">
+                <p class="empty-message">Очередь пуста</p>
+            </div>
+        </div>
+
+        <div class="card actions-card">
+            <h2>Действия</h2>
+            <div class="action-buttons">
+                <button id="reset-btn" class="btn btn-danger">Сбросить очередь</button>
+                <button id="qr-btn" class="btn btn-secondary">Показать QR-код</button>
+            </div>
+            <div class="action-buttons" style="margin-top: 10px;">
+                <button id="change-pin-btn" class="btn btn-secondary">Изменить PIN</button>
+            </div>
+        </div>
+
+        <!-- Reset Confirmation Modal -->
+        <div id="reset-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Сбросить очередь?</h2>
+                <p>Это удалит все талоны и начнёт новую очередь с нового случайного номера. Это действие нельзя отменить.</p>
+                <div class="modal-buttons">
+                    <button id="reset-cancel" class="btn btn-secondary">Отмена</button>
+                    <button id="reset-confirm" class="btn btn-danger">Да, сбросить</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Code Modal -->
+        <div id="qr-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>QR-код для клиентов</h2>
+                <div id="qr-code"></div>
+                <p id="qr-url" class="qr-url"></p>
+                <button id="qr-close" class="btn btn-secondary">Закрыть</button>
+            </div>
+        </div>
+
+        <!-- Change PIN Modal -->
+        <div id="pin-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Изменить PIN</h2>
+                <input type="password" id="new-pin-input" class="pin-input" maxlength="6" placeholder="Новый 6-значный PIN" inputmode="numeric" pattern="[0-9]*">
+                <input type="password" id="confirm-pin-input" class="pin-input" maxlength="6" placeholder="Подтвердите PIN" inputmode="numeric" pattern="[0-9]*">
+                <p id="pin-error" class="error-message hidden">PIN-коды не совпадают</p>
+                <div class="modal-buttons">
+                    <button id="pin-cancel" class="btn btn-secondary">Отмена</button>
+                    <button id="pin-save" class="btn btn-primary">Сохранить PIN</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/cashier.js"></script>
+</body>
+</html>
